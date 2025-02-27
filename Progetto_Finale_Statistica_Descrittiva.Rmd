@@ -1,0 +1,194 @@
+---
+title: "Analisi del Mercato Immobiliare del Texas"
+author: "Feliziano Copponi"
+date: "2025-02-27"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Introduzione
+
+Questo report analizza le tendenze del mercato immobiliare in Texas utilizzando dati storici sulle vendite di immobili.
+
+
+## Installazione dei pacchetti necessari e caricamento degli stessi
+
+```{r}
+# Installazione dei pacchetti necessari
+required_packages <- c("dplyr", "moments", "ggplot2", "DescTools")
+new_packages <- required_packages[!(required_packages %in% installed.packages()[,"Package"])]
+if(length(new_packages)) install.packages(new_packages)
+
+# Caricamento dei pacchetti
+library(dplyr)
+library(moments)
+library(ggplot2)
+library(DescTools)
+
+
+```
+
+## Configurazione della directory di lavoro 
+```{r}
+
+# Imposta la directory di lavoro
+setwd("/Users/feliziano/RWorkspace")
+# Verifica della directory di lavoro corrente
+getwd()
+
+
+```
+
+## Caricamento del dataset
+```{r}
+# Caricamento del dataset
+data <- read.csv("realestate_texas.csv", sep = ",")
+# Visualizzazione delle prime righe del dataset
+head(data)
+
+```
+## Statistiche descrittive per variabili numeriche
+
+```{r}
+# Calcolo delle statistiche descrittive
+summary_stats <- data %>%
+  summarise(across(where(is.numeric), list(
+    mean = ~ mean(., na.rm = TRUE),
+    median = ~ median(., na.rm = TRUE),
+    sd = ~ sd(., na.rm = TRUE),
+    skewness = ~ skewness(., na.rm = TRUE),
+    kurtosis = ~ kurtosis(., na.rm = TRUE)
+  )))
+
+# Visualizzazione delle statistiche descrittive
+print(summary_stats)
+```
+
+## Distribuzione di frequenza per variabili categoriche
+```{r}
+# Distribuzione di frequenza per la variabile 'city'
+city_freq <- table(data$city)
+print(city_freq)
+
+# Distribuzione di frequenza per la variabile 'year'
+year_freq <- table(data$year)
+print(year_freq)
+
+# Distribuzione di frequenza per la variabile 'month'
+month_freq <- table(data$month)
+print(month_freq)
+
+```
+
+
+
+## Creazione di classi per 'median_price' e calcolo dell'indice di Gini
+```{r}
+# Creazione di classi per 'median_price'
+breaks <- round(seq(0, max(data$median_price, na.rm = TRUE), length.out = 6))
+data <- data %>%
+  mutate(median_price_class = cut(median_price, breaks = breaks, dig.lab = 10))
+
+# Distribuzione di frequenza per le classi di 'median_price'
+freq_table <- table(data$median_price_class)
+print(freq_table)
+
+# Calcolo dell'indice di Gini
+gini_index <- Gini(freq_table)
+cat("L'indice di Gini per le classi di prezzo mediano è:", gini_index, "\n")
+
+```
+
+## Calcolo delle probabilità
+```{r}
+# Probabilità che una riga riporti la città "Beaumont"
+prob_beaumont <- mean(data$city == "Beaumont")
+
+# Probabilità che una riga riporti il mese di Luglio
+prob_july <- mean(data$month == 7)
+
+# Probabilità che una riga riporti il mese di dicembre 2012
+prob_dec_2012 <- mean(data$month == 12 & data$year == 2012)
+
+cat("Probabilità di 'Beaumont':", prob_beaumont, "\n")
+cat("Probabilità di 'Luglio':", prob_july, "\n")
+cat("Probabilità di 'Dicembre 2012':", prob_dec_2012, "\n")
+
+
+```
+## Aggiunta al dataset di nuove variabili: Prezzo medio, Efficacio degli annunci
+```{r}
+# Creazione delle nuove variabili
+data <- data %>%
+  mutate(
+    avg_price = volume / sales, # Prezzo medio
+    listing_effectiveness = sales / listings # Efficacia degli annunci
+  )
+
+# Visualizzazione delle prime righe con le nuove variabili
+head(data)
+
+```
+## Analisi condizionata per città
+```{r}
+# Calcolo delle statistiche per città
+city_stats <- data %>%
+  group_by(city) %>%
+  summarise(
+    mean_sales = mean(sales, na.rm = TRUE),
+    sd_sales = sd(sales, na.rm = TRUE)
+  )
+
+# Visualizzazione delle statistiche per città
+print(city_stats)
+
+```
+## Visualizzazioni grafiche
+# Vendite medie per citta
+```{r}
+# Grafico a barre delle vendite medie per città
+ggplot(city_stats, aes(x = reorder(city, -mean_sales), y = mean_sales, fill = city)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Vendite medie per città", x = "Città", y = "Vendite medie") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+
+```
+## Distribuzione del prezzo mediano per Citta
+```{r}
+ggplot(data, aes(x = city, y = median_price, fill = city)) +
+  geom_boxplot() +
+  labs(title = "Distribuzione del Prezzo Mediano per Città", x = "Città", y = "Prezzo Mediano") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+
+```
+## Andamento storico delle vendite
+```{r}
+# Creazione della variabile data
+data <- data %>%
+  mutate(date = as.Date(paste(year, month, "01", sep = "-"), format = "%Y-%m-%d"))
+
+ggplot(data, aes(x = date, y = sales, color = city)) +
+  geom_line() +
+  labs(title = "Andamento Storico delle Vendite", x = "Data", y = "Vendite") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+
+```
+## Media delle vendite per citta e mese
+```{r}
+
+mean_sales_city_month <- data %>%
+  group_by(city, month) %>%
+  summarize(media_sales = mean(sales, na.rm = TRUE))
+
+ggplot(mean_sales_city_month, aes(x = factor(month), y = media_sales, fill = city)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(title = "Media delle Vendite per Città e Mese", x = "Mese", y = "Media Vendite", fill = "Città") +
+  theme_minimal()
+
+```
