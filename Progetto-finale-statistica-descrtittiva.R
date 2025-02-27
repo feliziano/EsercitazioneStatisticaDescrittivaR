@@ -295,7 +295,7 @@ head(dati,n=80)
 # Creazione dei break points arrotondati
 breaks <- round(seq(min(dati$listings, na.rm = TRUE), 
                     max(dati$listings, na.rm = TRUE), 
-                    length.out = 21))
+                    length.out = 8))
 
 # Creazione delle classi senza virgole
 dati <- dati %>%

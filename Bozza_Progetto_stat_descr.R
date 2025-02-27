@@ -31,9 +31,9 @@ print(summary_stats)
   table(data$city)
   table(data$year)
   table(data$month)
-  # Creazione di classi per median_price
   
-
+  
+  # Creazione di classi per median_price
   breaks <- round(seq(0,max(data$median_price,na.rm = TRUE),length.out=6))
   
   
@@ -42,11 +42,15 @@ data <- data %>%
   median_price_class = cut(median_price, breaks = breaks,dig.lab = 10)
 )
 
-#distribuzione di frequenze median_price
-freq_price_class <- table(data$median_price_class)
+# Distribuzione di frequenza
+freq_table <- table(data$median_price_class)
+print(freq_table)
 
-ggplot(data,aes(x = median_price_class)) + 
-  geom_bar()
+# Grafico a barre
+ggplot(data, aes(x = median_price_class)) +
+  geom_bar() +
+  labs(title = "Distribuzione del prezzo mediano", x = "Classi di prezzo", y = "Frequenza")
+
 
 install.packages("DescTools")
 library(DescTools)
@@ -71,6 +75,54 @@ data <- data %>%
     listing_effectiveness = sales / listings # Efficacia degli annunci
   )
 
+print(data)
+
+# Dividere il dataset in liste di matrici per ogni città
+matrici_per_citta <- split(data[, c("listing_effectiveness","month","year")], data$city)
+
+
+
+# Visualizzare la matrice della città "Beaumont" come esempio
+beaumont<-matrici_per_citta[["Beaumont"]]
+
+bryan_cllg_stat<-matrici_per_citta[["Bryan-College Station"]]
+
+tyler<-matrici_per_citta[["Tyler"]]
+
+wichita_falls<-matrici_per_citta[["Wichita Falls"]]
+
+ggplot(beaumont,aes(x=year,y=listing_effectiveness))+
+  geom_bar(stat = "identity",fill="red")+
+  labs(title = "Efficacia degli Annunci negli anni, Beaumont",x="Anno",y="Rapporto Annunci/Vendite")
+  
+ggplot(beaumont,aes(x=month,y=listing_effectiveness))+
+  geom_bar(stat = "identity",fill="red")+
+  labs(title = "Efficacia degli Annunci nei mesi, Bryan",x="Anno",y="Rapporto Annunci/Vendite")
+
+ggplot(bryan_cllg_stat,aes(x=year,y=listing_effectiveness))+
+  geom_bar(stat = "identity",fill="green")+
+  labs(title = "Efficacia degli Annunci negli anni, Bryan College State",x="Anno",y="Rapporto Annunci/Vendite")
+
+ggplot(bryan_cllg_stat,aes(x=month,y=listing_effectiveness))+
+  geom_bar(stat = "identity",fill="green")+
+  labs(title = "Efficacia degli Annunci nei mesi, Bryan College State",x="Anno",y="Rapporto Annunci/Vendite")
+
+ggplot(tyler,aes(x=year,y=listing_effectiveness))+
+  geom_bar(stat = "identity",fill="blue")+
+  labs(title = "Efficacia degli Annunci negli anni, Tyler",x="Anno",y="Rapporto Annunci/Vendite")
+
+ggplot(tyler,aes(x=month,y=listing_effectiveness))+
+  geom_bar(stat = "identity",fill="blue")+
+  labs(title = "Efficacia degli Annunci nei mesi, Tyler",x="Anno",y="Rapporto Annunci/Vendite")
+
+ggplot(wichita_falls,aes(x=year,y=listing_effectiveness))+
+  geom_bar(stat = "identity",fill="purple")+
+  labs(title = "Efficacia degli Annunci negli anni, Wichica Falls",x="Anno",y="Rapporto Annunci/Vendite")
+
+ggplot(wichita_falls,aes(x=month,y=listing_effectiveness))+
+  geom_bar(stat = "identity",fill="purple")+
+  labs(title = "Efficacia degli Annunci nei mesi, Wichica Falls",x="Anno",y="Rapporto Annunci/Vendite")
+
 # Statistiche condizionate per città
 city_stats <- data %>%
   group_by(city) %>%
@@ -82,6 +134,65 @@ city_stats <- data %>%
 print(city_stats)
 
 # Grafico delle vendite medie per città
-ggplot(city_stats, aes(x = city, y = mean_sales)) +
+ggplot(city_stats, aes(x = city, y = mean_sales,fill = city)) +
   geom_bar(stat = "identity") +
   labs(title = "Vendite medie per città", x = "Città", y = "Vendite medie")
+
+# Boxplot per prezzo mediano tra città
+ggplot(data, aes(x = city, y = median_price,fill=city)) +
+  geom_boxplot() +
+  labs(title = "Distribuzione del prezzo mediano per città", x = "Città", y = "Prezzo mediano")
+
+# Grafico a barre per vendite totali per mese e città
+ggplot(data, aes(x = month, y = sales, fill = city)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(title = "Vendite totali per mese e città", x = "Mese", y = "Vendite totali")
+
+# Line chart per andamento storico delle vendite per anno
+ggplot(data, aes(x = year, y = sales, color = city)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Andamento storico delle vendite", x = "Tempo", y = "Vendite")
+# Line chart per andamento storico delle vendite per mese
+ggplot(data, aes(x = month, y = sales, color = city)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Andamento storico delle vendite", x = "Tempo", y = "Vendite")
+# Calcolo della media delle vendite per ogni combinazione di city, year, month e listings_class
+nuovo_dataset <- data %>%
+  group_by(city, year, month, listings_class) %>%
+  summarise(mean_sales = mean(sales, na.rm = TRUE)) %>%
+  ungroup()
+
+print(nuovo_dataset)
+
+ggplot(data, aes(x = listings, y = sales, color = city)) +
+  geom_point(size = 3, alpha = 0.7) +  # Punti semi-trasparenti
+  geom_smooth(method = "lm", se = FALSE) +  # Linea di regressione per ogni città
+  labs(title = "Relazione tra Listings e Sales per Città",
+       x = "Listings",
+       y = "Sales",
+       color = "Città") +
+  theme_minimal()
+
+mean_sales_city_month <- data %>%
+  group_by(city,month) %>%
+  summarize(media_sales=mean(sales,na.rm=TRUE))
+
+mean_sales_city_month
+print(mean_sales_city_month,n=60)
+
+
+ggplot(mean_sales_city_month, aes(x = factor(month), y = media_sales, fill = city)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(title = "Media delle vendite per città e mese",
+       x = "Mese",
+       y = "Media vendite",
+       fill = "Città") +
+  theme_minimal()
+
+
+
+
+
+
+
+
