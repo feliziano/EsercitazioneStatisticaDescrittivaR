@@ -198,7 +198,6 @@ mean_sales_city_month <- data %>%
 mean_sales_city_month
 print(mean_sales_city_month,n=60)
 
-
 ggplot(mean_sales_city_month, aes(x = factor(month), y = media_sales, fill = city)) +
   geom_bar(stat = "identity", position = "dodge") +
   labs(title = "Media delle vendite per città e mese",
@@ -206,6 +205,7 @@ ggplot(mean_sales_city_month, aes(x = factor(month), y = media_sales, fill = cit
        y = "Media vendite",
        fill = "Città") +
   theme_minimal()
+
 
 
 
