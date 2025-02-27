@@ -10,6 +10,11 @@ setwd("/Users/feliziano/RWorkspace")
 data <- read.csv("realestate_texas.csv",sep=",")
 # Carica il dataset
 # Statistiche descrittive per variabili numeriche
+
+head(data)
+# Descrizione delle variabili
+cat("Il dataset contiene variabili numeriche (sales, volume, median_price, listings, months_inventory) e categoriche (city, year, month).\n")
+
 library(dplyr)
 library(moments)
 
@@ -42,6 +47,8 @@ data <- data %>%
   median_price_class = cut(median_price, breaks = breaks,dig.lab = 10)
 )
 
+head(data)
+
 # Distribuzione di frequenza
 freq_table <- table(data$median_price_class)
 print(freq_table)
@@ -55,8 +62,9 @@ ggplot(data, aes(x = median_price_class)) +
 install.packages("DescTools")
 library(DescTools)
 
-gini_index <- Gini(freq_price_class)
-print(gini_index)
+# Indice di Gini
+gini_index <- Gini(freq_table)
+cat("L'indice di Gini per le classi di prezzo mediano è:", gini_index, "\n")
 
 # Probabilità che una riga sia "Beaumont"
 prob_beaumont <- mean(data$city == "Beaumont")
@@ -75,7 +83,7 @@ data <- data %>%
     listing_effectiveness = sales / listings # Efficacia degli annunci
   )
 
-print(data)
+head(data)
 
 # Dividere il dataset in liste di matrici per ogni città
 matrici_per_citta <- split(data[, c("listing_effectiveness","month","year")], data$city)
@@ -148,9 +156,19 @@ ggplot(data, aes(x = month, y = sales, fill = city)) +
   geom_bar(stat = "identity", position = "dodge") +
   labs(title = "Vendite totali per mese e città", x = "Mese", y = "Vendite totali")
 
+# Assumendo che 'year' e 'month' siano numerici
+data <- data %>%
+  mutate(date = as.Date(paste(year, month, "01", sep = "-"), format = "%Y-%m-%d"))
+
+head(data)
+ggplot(data, aes(x = date, y = sales, color = city)) +
+  geom_line() +
+  labs(title = "Andamento storico delle vendite", x = "Data", y = "Vendite") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
 # Line chart per andamento storico delle vendite per anno
-ggplot(data, aes(x = year, y = sales, color = city)) +
-  geom_bar(stat = "identity") +
+ggplot(data, aes(x = year, y = sales, fill = city)) +
+  geom_bar(stat = "identity",position="dodge") +
   labs(title = "Andamento storico delle vendite", x = "Tempo", y = "Vendite")
 # Line chart per andamento storico delle vendite per mese
 ggplot(data, aes(x = month, y = sales, color = city)) +
@@ -188,6 +206,8 @@ ggplot(mean_sales_city_month, aes(x = factor(month), y = media_sales, fill = cit
        y = "Media vendite",
        fill = "Città") +
   theme_minimal()
+
+
 
 
 
