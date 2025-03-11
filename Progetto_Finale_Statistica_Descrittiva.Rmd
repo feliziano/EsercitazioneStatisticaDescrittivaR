@@ -63,9 +63,106 @@ summary_stats <- data %>%
     kurtosis = ~ kurtosis(., na.rm = TRUE)
   )))
 
+library("glue")
 # Visualizzazione delle statistiche descrittive
-print(summary_stats)
+summary_stats_list <- glue("
+- **Year Mean:** {summary_stats$year_mean}
+- **Year Median:** {summary_stats$year_median}
+- **Year SD:** {summary_stats$year_sd}
+- **Year Skewness:** {summary_stats$year_skewness}
+- **Year Kurtosis:** {summary_stats$year_kurtosis}
+- **Month Mean:** {summary_stats$month_mean}
+- **Month Median:** {summary_stats$month_median}
+- **Month SD:** {summary_stats$month_sd}
+- **Month Skewness:** {summary_stats$month_skewness}
+- **Month Kurtosis:** {summary_stats$month_kurtosis}
+- **Sales Mean:** {summary_stats$sales_mean}
+- **Sales Median:** {summary_stats$sales_median}
+- **Sales SD:** {summary_stats$sales_sd}
+- **Sales Skewness:** {summary_stats$sales_skewness}
+- **Sales Kurtosis:** {summary_stats$sales_kurtosis}
+- **Volume Mean:** {summary_stats$volume_mean}
+- **Volume Median:** {summary_stats$volume_median}
+- **Volume SD:** {summary_stats$volume_sd}
+- **Volume Skewness:** {summary_stats$volume_skewness}
+- **Volume Kurtosis:** {summary_stats$volume_kurtosis}
+- **Median Price Mean:** {summary_stats$median_price_mean}
+- **Median Price Median:** {summary_stats$median_price_median}
+- **Median Price SD:** {summary_stats$median_price_sd}
+- **Median Price Skewness:** {summary_stats$median_price_skewness}
+- **Median Price Kurtosis:** {summary_stats$median_price_kurtosis}
+- **Listings Mean:** {summary_stats$listings_mean}
+- **Listings Median:** {summary_stats$listings_median}
+- **Listings SD:** {summary_stats$listings_sd}
+- **Listings Skewness:** {summary_stats$listings_skewness}
+- **Listings Kurtosis:** {summary_stats$listings_kurtosis}
+- **Months Inventory Mean:** {summary_stats$months_inventory_mean}
+- **Months Inventory Median:** {summary_stats$months_inventory_median}
+- **Months Inventory SD:** {summary_stats$months_inventory_sd}
+- **Months Inventory Skewness:** {summary_stats$months_inventory_skewness}
+- **Months Inventory Kurtosis:** {summary_stats$months_inventory_kurtosis}
+")
+
+print(summary_stats_list)
 ```
+## 2. Variabili relative alle vendite (`sales`, `volume`, `median_price`)
+
+### `sales` (numero totale di vendite):
+
+- **Media (`sales_mean`)**: 192.29.
+- **Mediana (`sales_median`)**: 175.5.
+- **Deviazione standard (`sales_sd`)**: 79.65.
+- **Asimmetria (`sales_skewness`)**: 0.718 (distribuzione leggermente asimmetrica a destra).
+- **Curtosi (`sales_kurtosis`)**: 2.687 (distribuzione leggermente più "appuntita" rispetto a una normale).
+
+ Il numero di vendite varia significativamente, con una distribuzione leggermente asimmetrica verso destra, indicando la presenza di alcuni periodi o città con un numero di vendite più alto.
+
+---
+
+### `volume` (valore totale delle vendite in milioni di dollari):
+
+- **Media (`volume_mean`)**: 31.005.
+- **Mediana (`volume_median`)**: 27.0625.
+- **Deviazione standard (`volume_sd`)**: 16.651.
+- **Asimmetria (`volume_skewness`)**: 0.885 (distribuzione asimmetrica a destra).
+- **Curtosi (`volume_kurtosis`)**: 3.177 (distribuzione più "appuntita" rispetto a una normale).
+
+#### Il valore totale delle vendite mostra una distribuzione asimmetrica a destra, con alcuni periodi o città che contribuiscono in modo significativo al volume totale.
+
+---
+
+### `median_price` (prezzo mediano degli immobili venduti):
+
+- **Media (`median_price_mean`)**: 132,665.4 dollari.
+- **Mediana (`median_price_median`)**: 134,500 dollari.
+- **Deviazione standard (`median_price_sd`)**: 22,662.15 dollari.
+- **Asimmetria (`median_price_skewness`)**: -0.365 (distribuzione leggermente asimmetrica a sinistra).
+- **Curtosi (`median_price_kurtosis`)**: 2.377 (distribuzione leggermente più "appuntita" rispetto a una normale).
+
+####  Il prezzo mediano degli immobili è relativamente stabile, con una leggera asimmetria a sinistra, indicando che ci sono alcuni immobili venduti a prezzi più bassi rispetto alla media.
+
+### Identificazione delle variabili con maggiore variabilità e asimmetria
+
+In questa sezione, identifichiamo la variabile con la maggiore variabilità (deviazione standard più alta) e quella con la distribuzione più asimmetrica (skewness più alto o più basso).
+
+```{r}
+# Confronto delle deviazioni standard
+sd_comparison <- data %>%
+  summarise(across(where(is.numeric), sd, na.rm = TRUE))
+print("Deviazioni standard:")
+print(sd_comparison)
+
+# Confronto degli indici di skewness
+skewness_comparison <- data %>%
+  summarise(across(where(is.numeric), skewness, na.rm = TRUE))
+print("Indici di skewness:")
+print(skewness_comparison)
+
+```
+#### Considerazioni:
+- **Variabile con maggiore variabilità**: La variabile con la deviazione standard più alta è `volume`, indicando che il valore totale delle vendite varia significativamente.
+- **Variabile con maggiore asimmetria**: La variabile con l'indice di skewness più alto è `volume`, suggerendo una distribuzione asimmetrica a destra, con alcuni periodi o città che contribuiscono in modo significativo al volume totale.
+
 
 ## Distribuzione di frequenza per variabili categoriche
 ```{r}
@@ -83,12 +180,12 @@ print(month_freq)
 
 ```
 
+Le variabili categoriche city, year e month hanno una distribuzione equa(concentrazione 0). Ciò è positivo poichè evita che la differenza nel numero di osservazioni possa condizionare le varie analisi.
 
-
-## Creazione di classi per 'median_price' e calcolo dell'indice di Gini
+## Creazione di classi per 'median_price' 
 ```{r}
 # Creazione di classi per 'median_price'
-breaks <- round(seq(0, max(data$median_price, na.rm = TRUE), length.out = 6))
+breaks <- round(seq(min(data$median_price), max(data$median_price, na.rm = TRUE), length.out = 6))
 data <- data %>%
   mutate(median_price_class = cut(median_price, breaks = breaks, dig.lab = 10))
 
@@ -96,11 +193,85 @@ data <- data %>%
 freq_table <- table(data$median_price_class)
 print(freq_table)
 
+plot2 <- ggplot(data, aes(x = median_price_class)) +
+  geom_bar(fill = "darkorange", color = "black") +
+  labs(
+    title = "Distribuzione delle Classi di Prezzo Mediano",
+    x = "Classe di Prezzo",
+    y = "Frequenza"
+  ) +
+  scale_x_discrete(labels = function(x) {
+    # Formattazione dei limiti delle classi per renderli leggibili
+    gsub("\\(|\\)|\\[|\\]", "", x) %>%
+      gsub(",", " - ", .) %>%
+      strsplit(split = " - ") %>%
+      lapply(function(y) paste0(format(as.numeric(y), big.mark = ".", decimal.mark = ","), collapse = " - ")) %>%
+      unlist()
+  }) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))  # Rotazione delle etichette per leggibilità
+
+# Visualizzazione del grafico
+print(plot2)
+
+```
+
+### Distribuzione delle classi di prezzo mediano
+
+Il grafico mostra la suddivisione dei prezzi mediani in **5 intervalli equidistanti**, ciascuno rappresentante un range di prezzo specifico. Di seguito, un'analisi dettagliata:
+
+---
+
+#### **Range di prezzo**
+- I prezzi mediani sono suddivisi in classi che vanno da **$73.800** a **$180.000**.
+- Ogni intervallo copre un range uniforme, calcolato tra il valore minimo e massimo dei prezzi mediani.
+
+---
+
+#### **Distribuzione delle frequenze**
+- **Fascia più frequente**: La classe **$138.000 - $159.000** registra la frequenza più alta, indicando che la maggior parte delle vendite si concentra in questa fascia di prezzo.
+- **Fascia meno frequente**: La classe **$73.800 - $95.000** ha la frequenza più bassa, suggerendo che gli immobili con prezzi così ridotti sono rari.
+
+---
+
+#### **Uniformità della distribuzione**
+- Nonostante gli intervalli siano equidistanti, la distribuzione delle frequenze **non è uniforme**.
+- Si osserva una **concentrazione significativa** nelle fasce di prezzo medio-alto, in particolare tra **$116.000** e **$159.000**.
+
+---
+
+#### **Osservazioni generali**
+- Il grafico evidenzia una **tendenza** a concentrare i prezzi mediani nella fascia **medio-alta** del range ($116.000 - $159.000).
+- Questa distribuzione suggerisce che il mercato immobiliare è caratterizzato da una maggiore domanda e offerta in questa fascia di prezzo.
+
+
+```{r}
 # Calcolo dell'indice di Gini
 gini_index <- Gini(freq_table)
 cat("L'indice di Gini per le classi di prezzo mediano è:", gini_index, "\n")
 
+
+# Funzione per calcolare l'indice di Gini normalizzato
+gini.index <- function(x) {
+  ni <- table(x)             # Frequenze assolute
+  fi <- ni / length(x)       # Frequenze relative
+  fi2 <- fi^2                # Quadrato delle frequenze relative
+  J <- length(table(x))      # Numero di modalità
+
+  gini <- 1 - sum(fi2)  # Calcolo dell'indice di Gini
+  print(gini)
+  gini.normalizzato <- gini / ((J - 1) / J)  # Normalizzazione
+  return(gini.normalizzato)
+}
+
+# Applicazione alla variabile median_price (utilizzando le classi create)
+gini_median_price <- gini.index(data$median_price_class)
+
+# Stampa del risultato
+print(paste("Indice di Gini normalizzato per 'median_price':", round(gini_median_price, 2)))
 ```
+
+
 
 ## Calcolo delle probabilità
 ```{r}
@@ -119,6 +290,13 @@ cat("Probabilità di 'Dicembre 2012':", prob_dec_2012, "\n")
 
 
 ```
+
+Evento	Probabilità
+Mese: Luglio	0.08
+
+
+
+
 ## Aggiunta al dataset di nuove variabili: Prezzo medio, Efficacio degli annunci
 ```{r}
 # Creazione delle nuove variabili
@@ -132,6 +310,81 @@ data <- data %>%
 head(data)
 
 ```
+```{r}
+plot_efficacia <- ggplot(data, aes(x = listing_effectiveness)) +
+  geom_histogram(
+    binwidth = 0.03,  # Scelta ottimale per rappresentare la distribuzione
+    fill = "red",
+    color = "black"
+  ) +
+  labs(
+    title = "Distribuzione dell'Efficacia degli Annunci di Vendita",
+    x = "Efficacia degli Annunci (Vendite per Annuncio)",
+    y = "Frequenza"
+  ) +
+  theme_minimal()
+
+# Visualizzazione del grafico
+print(plot_efficacia)
+```
+## Analisi per anno
+```{r}
+# Analisi per Anno
+summary_year <- data %>%
+  group_by(year) %>%
+  summarise(
+    mean_sales = round(mean(sales, na.rm = TRUE), 2),
+    sd_sales = round(sd(sales, na.rm = TRUE), 2),
+    mean_median_price = round(mean(median_price, na.rm = TRUE), 2),
+    sd_median_price = round(sd(median_price, na.rm = TRUE), 2),
+    mean_efficacia_annunci = round(mean(listing_effectiveness, na.rm = TRUE), 2),
+    sd_efficacia_annunci = round(sd(listing_effectiveness, na.rm = TRUE), 2)
+  )
+
+print("Summary per anno:" )
+
+summary(summary_year)
+
+
+print(summary_year)
+```
+### Analisi delle statistiche
+
+- **Vendite medie**: Si osserva una **crescita costante** del numero medio di vendite, che passa da **169.0** nel 2010 a **231.0** nel 2014. Questo trend indica un'espansione progressiva del mercato immobiliare.
+
+- **Prezzo mediano**: Anche il prezzo mediano degli immobili mostra un **andamento positivo**, aumentando da **$130,192** nel 2010 a **$139,481** nel 2014. Questo suggerisce un incremento generale dei valori immobiliari nel periodo considerato.
+
+- **Efficacia degli annunci**: L’efficacia degli annunci di vendita migliora gradualmente, raggiungendo il **valore più alto** nel 2014 (**0.15**). Questo miglioramento riflette probabilmente l’adozione di **strategie di vendita più efficaci** nel corso degli anni.
+
+```{r}
+summary_month <- data %>%
+  group_by(month) %>%
+  summarise(
+    mean_sales = round(mean(sales, na.rm = TRUE), 2),
+    sd_sales = round(sd(sales, na.rm = TRUE), 2),
+    mean_median_price = round(mean(median_price, na.rm = TRUE), 2),
+    sd_median_price = round(sd(median_price, na.rm = TRUE), 2),
+    mean_listing_effectiveness = round(mean(listing_effectiveness, na.rm = TRUE), 2),
+    sd_listing_effectiveness = round(sd(listing_effectiveness, na.rm = TRUE), 2)
+  )
+
+```
+
+
+```{r}
+# Grafico: Efficacia degli Annunci per Mese
+plot_month <- ggplot(summary_month, aes(x = as.factor(month), y = mean_listing_effectiveness)) +
+  geom_bar(stat = "identity", fill = "lightblue", color = "black") +
+  labs(
+    title = "Efficacia degli Annunci per Mese",
+    x = "Mese",
+    y = "Media Efficacia"
+  ) +
+  theme_minimal()
+
+print(plot_month)
+```
+
 ## Analisi condizionata per città
 ```{r}
 # Calcolo delle statistiche per città
@@ -155,16 +408,14 @@ ggplot(city_stats, aes(x = reorder(city, -mean_sales), y = mean_sales, fill = ci
   labs(title = "Vendite medie per città", x = "Città", y = "Vendite medie") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
-
 ```
+
 ## Distribuzione del prezzo mediano per Citta
 ```{r}
 ggplot(data, aes(x = city, y = median_price, fill = city)) +
   geom_boxplot() +
   labs(title = "Distribuzione del Prezzo Mediano per Città", x = "Città", y = "Prezzo Mediano") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
-
-
 ```
 ## Andamento storico delle vendite
 ```{r}
@@ -176,7 +427,6 @@ ggplot(data, aes(x = date, y = sales, color = city)) +
   geom_line() +
   labs(title = "Andamento Storico delle Vendite", x = "Data", y = "Vendite") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
-
 
 ```
 ## Media delle vendite per citta e mese
@@ -192,3 +442,52 @@ ggplot(mean_sales_city_month, aes(x = factor(month), y = media_sales, fill = cit
   theme_minimal()
 
 ```
+
+
+### **Conclusioni**
+
+L’analisi del mercato immobiliare del Texas (2010-2014) ha rivelato trend chiave e differenze geografiche, basandosi su un dataset bilanciato di 240 osservazioni tra Beaumont, Bryan-College Station, Tyler e Wichita Falls. Ecco i punti principali emersi:
+
+---
+
+### **Crescita del mercato e stagionalità**
+- **Crescita costante**: Le vendite medie annuali sono aumentate da 169 (2010) a 231 (2014), con un’efficacia degli annunci in crescita dal 9% al 15%, segnando un mercato in espansione.
+- **Stagionalità**: I mesi estivi (maggio-agosto) sono i più favorevoli, con picchi di vendite e un’efficacia degli annunci superiore al 14%. I mesi invernali registrano invece performance inferiori, con efficacia sotto il 10%.
+
+---
+
+### **Differenze geografiche**
+- **Tyler**: Leader per volume di vendite (oltre 15.000 transazioni), ma con un’efficacia degli annunci relativamente bassa (9,35%), indicando un mercato competitivo o saturo.
+- **Bryan-College Station**: Efficienza massima (14,7% di efficacia) e prezzi mediani più alti ($157.488), suggerendo un mercato stabile e di alto valore.
+- **Wichita Falls**: Volumi di vendita più bassi, ma efficacia sorprendentemente alta (12,8%), segno di un mercato piccolo ma ben bilanciato.
+- **Beaumont**: Posizione intermedia, con volumi e prezzi mediani inferiori rispetto alle altre città.
+
+---
+
+### **Prezzi e variabilità**
+- **Prezzi mediani**: La variabile con la maggiore variabilità (varianza > $513 milioni), riflettendo l’eterogeneità del mercato.
+- **Distribuzione dei prezzi**: La maggior parte delle vendite si concentra nella fascia medio-alta ($138.000 - $159.000), con un indice di Gini di 0,0968 che indica una distribuzione equa.
+
+---
+
+### **Efficienza del mercato**
+- **Efficacia degli annunci**: Media del 12%, con picchi oltre il 30% in condizioni di forte domanda o strategie di marketing mirate.
+- **Asimmetria positiva**: Il volume delle vendite mostra picchi stagionali, con una skewness di 0,88.
+
+---
+
+### **Visualizzazioni e trend**
+- **Grafici**: Hanno confermato la crescita costante delle vendite, la presenza di outlier (soprattutto a Tyler e Bryan-College Station) e la predominanza di Tyler e Bryan-College Station nei volumi di vendita.
+
+---
+
+### **Considerazioni finali**
+Il mercato immobiliare texano è in crescita, con differenze geografiche significative e una chiara stagionalità. Le città più grandi (Tyler e Bryan-College Station) dominano per volumi di vendita, mentre quelle più piccole (Wichita Falls) mostrano un’efficienza maggiore. La stagionalità estiva rappresenta un’opportunità strategica per le agenzie immobiliari, suggerendo la necessità di campagne mirate in questo periodo.
+
+Questa analisi offre spunti pratici per ottimizzare le strategie di vendita e marketing, migliorando la comprensione delle dinamiche del mercato immobiliare texano.
+
+
+
+
+
+

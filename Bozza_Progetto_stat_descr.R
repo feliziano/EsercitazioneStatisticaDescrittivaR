@@ -216,3 +216,5 @@ ggplot(mean_sales_city_month, aes(x = factor(month), y = media_sales, fill = cit
 
 
 
+
+
